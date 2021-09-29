@@ -69,7 +69,7 @@ class CacheDB:
     def addCert(self, certStr, commit=True):
         curDate = self._getCurDateTime()
         self._execSQL(
-            "INSERT INTO certs (cert, last_update) VALUES (?, ?) ON CONFLICT DO UPDATE SET last_update = ?",
+            "INSERT INTO certs (cert, last_update) VALUES (?, ?) ON CONFLICT (cert) DO UPDATE SET last_update = ?",
             (certStr, curDate, curDate,),
             fetchResult=False,
             commit=commit
