@@ -115,10 +115,11 @@ def cert(certId):
             'SubjectAllName': ucert.getSubjectAltNameStr()
         }
     except:
-        v = ['CacheDate', 'ExpDate', 'ExpDays', 'Hosts', 'ComName', 'Subject', 'Issuer', 'Serial', 'Version', 'SubjectAllName']
+        v = ['CacheDate', 'ExpDate', 'Hosts', 'ComName', 'Subject', 'Issuer', 'Serial', 'Version', 'SubjectAllName']
         cObj = {}
         for i in v:
             cObj[i] = ''
+        cObj['ExpDays'] = 2**31
 
     print(json.dumps(cObj, indent=2))
 
