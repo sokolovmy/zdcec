@@ -116,5 +116,8 @@ def cert(certId):
     print(json.dumps(cObj, indent=2))
 
 if __name__ == '__main__':
-    db = lib.db.CacheDB()
-    opts()
+    try:
+        db = lib.db.CacheDB()
+        opts()
+    except:
+        print("ZBX_NOTSUPPORTED: Unsupported item key.")
