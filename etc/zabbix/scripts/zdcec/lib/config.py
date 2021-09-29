@@ -8,7 +8,7 @@ config = {
     'namedZonesDir': 'c:/Github/zdcec/tmp/named',
     'logFileName': 'tmp/zdcec.log',
     'loggingLevel': logging.DEBUG,
-    'loggingToConsole': False,
+    'loggingToConsole': True,
     'dateTimeFormat': '%Y-%m-%d %H:%M:%S %Z',
     'dbDateTimeFormat': '%Y%m%dT%H%M%SZ',
     'logMaxFiles': 7,

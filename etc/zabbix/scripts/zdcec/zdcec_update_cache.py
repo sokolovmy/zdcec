@@ -36,13 +36,15 @@ try:
     counter = 0
     for host in hosts:
         logger.info(f"Trying to get a cert for '{host}'.")
-        cert = sslCheck.getCert(host)
+        cert, exception = sslCheck.getCert(host)
         if cert:
             db.addHostWithCert(host, cert.toPEM())
             logger.debug(f"The certificate for the host '{host}' is saved in the cache.")
             counter += 1
         else:
             logger.warning(f"Cannot save the certificate for the host '{host}'. Host or web service is down?")
+            if exception:
+                logger.error(exception)
     logger.debug(f'Information updated on {counter} hosts')
 
 
