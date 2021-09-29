@@ -36,6 +36,8 @@ try:
     counter = 0
     for host in hosts:
         logger.info(f"Trying to get a cert for '{host}'.")
+        if host[-1] == '.':
+            host = host[:-1]
         cert, exception = sslCheck.getCert(host)
         if cert:
             db.addHostWithCert(host, cert.toPEM())
