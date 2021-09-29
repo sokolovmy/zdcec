@@ -35,7 +35,7 @@ try:
     sslCheck = lib.sslcheck.SSLCheck(timeout=1)
     counter = 0
     for host in hosts:
-        logger.info(f"Trying to get a cert for {host}.")
+        logger.info(f"Trying to get a cert for '{host}'.")
         cert = sslCheck.getCert(host)
         if cert:
             db.addHostWithCert(host, cert.toPEM())

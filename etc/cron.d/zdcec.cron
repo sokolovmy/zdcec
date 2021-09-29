@@ -1,0 +1,3 @@
+SHELL=/bin/sh
+MAILTO=m.sokolov@haulmont.com
+0   7   *   *   *   zabbix  /etc/zabbix/scripts/zdcec/zdcec_update_cache.py >/dev/null 2>/dev/null

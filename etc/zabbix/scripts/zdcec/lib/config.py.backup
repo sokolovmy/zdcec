@@ -3,10 +3,10 @@ import logging
 
 
 config = {
-    'dbFileName': '/var/lib/zabbix/dcec_cache.db',
+    'dbFileName': '/var/lib/zabbix/zdcec_cache.db',
     'namedConfFile': '/var/lib/zabbix/copy_from_ns0/named/chroot/var/named/zones/forward.zones',
     'namedZonesDir': '/var/lib/zabbix/copy_from_ns0/named/chroot/var/named',
-    'logFileName': '/var/log/zabbix/dcec.log',
+    'logFileName': '/var/log/zabbix/zdcec.log',
     'loggingLevel': logging.DEBUG,
     'loggingToConsole': False,
     'dateTimeFormat': '%Y-%m-%d %H:%M:%S %Z',

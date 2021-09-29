@@ -136,7 +136,7 @@ class SSLCheck:
     def getCert(self, hostName):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.settimeout(self.timeout)
+                #s.settimeout(3)#self.timeout)
                 s.connect((hostName, 443))
                 c = Connection(self.ssl_connection_setting, s)
                 c.set_tlsext_host_name(str.encode(hostName))
@@ -146,6 +146,7 @@ class SSLCheck:
                 c.shutdown()
                 s.close()
                 return UCert(cert)
-        except:
+        except BaseException as e:
+            print(e)
             return None
     

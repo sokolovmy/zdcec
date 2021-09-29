@@ -14,7 +14,7 @@ import json
 
 def usage():
     print(f'''
-Domain Cert Expiration Checker.
+Zabbix Domain/Cert Expire Check.
 
 version {version}
 

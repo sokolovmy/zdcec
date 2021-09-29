@@ -54,7 +54,7 @@ class DomainsParser:
                     continue
                 zoneFile = config['orphan_zones'][dn]['file']
                 if not os.path.isabs(zoneFile):
-                    relPath = os.path.dirname(self.namedConfFile)
+                    relPath = self.namedZonesDir if self.namedZonesDir else os.path.dirname(self.namedConfFile)
                     zoneFile = os.path.join(relPath, zoneFile)
                 self._domains[dn] = zoneFile
 

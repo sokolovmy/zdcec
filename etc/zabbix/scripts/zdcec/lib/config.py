@@ -3,10 +3,10 @@ import logging
 
 
 config = {
-    'dbFileName': 'tmp/dcec_cache.db',
+    'dbFileName': 'tmp/zdcec_cache.db',
     'namedConfFile': 'tmp/named/zones/forward.zones',
-    'namedZonesDir': 'tmp/named',
-    'logFileName': 'tmp/dcec.log',
+    'namedZonesDir': 'c:/Github/zdcec/tmp/named',
+    'logFileName': 'tmp/zdcec.log',
     'loggingLevel': logging.DEBUG,
     'loggingToConsole': False,
     'dateTimeFormat': '%Y-%m-%d %H:%M:%S %Z',
