@@ -125,8 +125,8 @@ class UCert:
         return ', '.join(self.getAllNames())
 
 class SSLCheck:
-    def __init__(self, timeout=1, socketTimeout=None):
-        self.timeout = socketTimeout if socketTimeout else timeout
+    def __init__(self, timeout=1)#, socketTimeout=None):
+        #self.timeout = socketTimeout if socketTimeout else timeout
         try:
             self.ssl_connection_setting = Context(SSLv3_METHOD)
         except ValueError:
@@ -136,7 +136,8 @@ class SSLCheck:
     def getCert(self, hostName):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                #s.settimeout(3)#self.timeout)
+                #s.settimeout(self.timeout)
+                #TODO: this is not working. need to try another way
                 s.connect((hostName, 443))
                 c = Connection(self.ssl_connection_setting, s)
                 c.set_tlsext_host_name(str.encode(hostName))
