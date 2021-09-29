@@ -121,3 +121,4 @@ if __name__ == '__main__':
         opts()
     except:
         print("ZBX_NOTSUPPORTED: Unsupported item key.")
+        sys.exit(-1)
