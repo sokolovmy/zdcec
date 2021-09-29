@@ -60,15 +60,22 @@ def listDomains():
     print(json.dumps(dl, indent=2))
 
 def domain(domainName):
-    dd = db.getDomainData(domainName)
-    expDate = lib.db.fromDbDateTime(dd[0])
-    curDate = datetime.now(tz=timezone.utc)
-    #expire_date, last_update
-    dObj = {
-        'ExpDate': getDateTimeStr(expDate),
-        'ExpDays': (expDate - curDate).days,
-        'CacheDate': getDateTimeStr(lib.db.fromDbDateTime(dd[1]))
-    }
+    try:
+        dd = db.getDomainData(domainName)
+        expDate = lib.db.fromDbDateTime(dd[0])
+        curDate = datetime.now(tz=timezone.utc)
+        #expire_date, last_update
+        dObj = {
+            'ExpDate': getDateTimeStr(expDate),
+            'ExpDays': (expDate - curDate).days,
+            'CacheDate': getDateTimeStr(lib.db.fromDbDateTime(dd[1]))
+        }
+    except:
+        dObj = {
+            'ExpDate': '',
+            'ExpDays': 2**31,
+            'CacheDate': ''
+        }
     print(json.dumps(dObj, indent=2))
 
 
