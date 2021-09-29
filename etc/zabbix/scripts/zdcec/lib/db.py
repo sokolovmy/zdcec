@@ -68,15 +68,20 @@ class CacheDB:
 
     def addCert(self, certStr, commit=True):
         curDate = self._getCurDateTime()
-        self._execSQL("INSERT INTO certs (cert, last_update) VALUES (?, ?) ON CONFLICT DO NOTHING", (certStr, curDate,), fetchResult=False, commit=commit)
+        self._execSQL(
+            "INSERT INTO certs (cert, last_update) VALUES (?, ?) ON CONFLICT DO UPDATE SET last_update = ?",
+            (certStr, curDate, curDate,),
+            fetchResult=False,
+            commit=commit
+        )
         result = self._execSQL("SELECT id FROM certs WHERE CERT = ?", (certStr,), commit=commit)
         return result[0][0]
     
     def addHost(self, cert_id, hostName, commit=True):
         curDate = self._getCurDateTime()
         self._execSQL(
-            "INSERT INTO hosts (hostname, cert_id, last_update) VALUES (?, ?, ?) ON CONFLICT (hostname) DO UPDATE SET cert_id = ?",
-            (hostName, cert_id, curDate, cert_id,),
+            "INSERT INTO hosts (hostname, cert_id, last_update) VALUES (?, ?, ?) ON CONFLICT (hostname) DO UPDATE SET cert_id = ?, last_update = ?",
+            (hostName, cert_id, curDate, cert_id, curDate,),
             commit=commit
         )
 
