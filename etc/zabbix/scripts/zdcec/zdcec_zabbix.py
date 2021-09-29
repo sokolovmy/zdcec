@@ -96,23 +96,30 @@ def listCerts():
     print(json.dumps(cl, indent=2))
 
 def cert(certId):
-    cd = db.getCertById(certId)
-    #cert, last_update
-    ucert = UCert(certPEM=cd[0])
-    expDate = ucert.getEndDate()
-    curDate = datetime.now(tz=timezone.utc)
-    cObj = {
-        'CacheDate': getDateTimeStr(lib.db.fromDbDateTime(cd[1])),
-        'ExpDate': getDateTimeStr(expDate),
-        'ExpDays': (expDate - curDate).days,
-        'Hosts': ', '.join(db.getHostsByCertId(certId)),
-        'ComName': ucert.getSubjectCommonName(),
-        "Subject": ucert.getSubjectStr(),
-        'Issuer': ucert.getIssuerStr(),
-        'Serial': str(ucert.getSerial()),
-        'Version': ucert.getVersion(),
-        'SubjectAllName': ucert.getSubjectAltNameStr()
-    }
+    try:
+        cd = db.getCertById(certId)
+        #cert, last_update
+        ucert = UCert(certPEM=cd[0])
+        expDate = ucert.getEndDate()
+        curDate = datetime.now(tz=timezone.utc)
+        cObj = {
+            'CacheDate': getDateTimeStr(lib.db.fromDbDateTime(cd[1])),
+            'ExpDate': getDateTimeStr(expDate),
+            'ExpDays': (expDate - curDate).days,
+            'Hosts': ', '.join(db.getHostsByCertId(certId)),
+            'ComName': ucert.getSubjectCommonName(),
+            "Subject": ucert.getSubjectStr(),
+            'Issuer': ucert.getIssuerStr(),
+            'Serial': str(ucert.getSerial()),
+            'Version': ucert.getVersion(),
+            'SubjectAllName': ucert.getSubjectAltNameStr()
+        }
+    except:
+        v = ['CacheDate', 'ExpDate', 'ExpDays', 'Hosts', 'ComName', 'Subject', 'Issuer', 'Serial', 'Version', 'SubjectAllName']
+        cObj = {}
+        for i in v:
+            cObj[i] = ''
+
     print(json.dumps(cObj, indent=2))
 
 if __name__ == '__main__':
