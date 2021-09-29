@@ -1,0 +1,9 @@
+/etc.named
+/etc.nginx
+*__pycache__*
+var
+etc.named
+*dsec_cache.db*
+old
+*.tar
+*tmp*

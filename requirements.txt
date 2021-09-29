@@ -1,0 +1,5 @@
+pyasn1>=0.4.8
+pyasn1_modules>=0.2.8
+pyopenssl>=20.0.1
+wizard_whois>=2.5.9
+iscpy>=1.8
