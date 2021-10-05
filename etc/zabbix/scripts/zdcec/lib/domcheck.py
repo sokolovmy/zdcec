@@ -2,6 +2,7 @@
 
 from datetime import timezone, datetime
 import wizard_whois
+#pip install https://github.com/egberts/iscpy/archive/refs/heads/master.zip
 import iscpy
 
 import os
