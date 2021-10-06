@@ -57,6 +57,16 @@ class CacheDB:
         cur.close()
         self.commit()
         return res
+
+    def removeUnusedCerts(self):
+        self._execSQL(
+            "DELETE FROM certs WHERE id NOT IN (SELECT cert_id FROM hosts GROUP BY cert_id);",
+            fetchResult=False
+        )
+
+    def removeNotFoundDomains(self):
+        pass
+
     def _getCurDateTime(self):
         curDate = datetime.now(tz=timezone.utc)
         curDate = curDate.strftime(config['dbDateTimeFormat'])

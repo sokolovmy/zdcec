@@ -1,16 +1,11 @@
 #!/usr/bin/python3
 
-
-
 from lib.config import config
 from lib.log import logger
 
 import lib.db
 import lib.domcheck
 import lib.sslcheck
-import getopt
-
-from pprint import pprint
 
 
 logger.info("Cache update starts.")
@@ -48,6 +43,13 @@ try:
             if exception:
                 logger.error(exception)
     logger.debug(f'Information updated on {counter} hosts')
+
+    logger.info("Removing outdated information from cache")
+    logger.info("Deleting unused certificates")
+    db.removeUnusedCerts()
+    logger.info("Deleting domains which are not in the Bind configuration")
+    db.removeNotFoundDomains()
+    logger.info('Clearing cache completed')
 
 
 except BaseException as e:
