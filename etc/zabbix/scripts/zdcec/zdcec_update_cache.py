@@ -48,7 +48,7 @@ try:
     logger.info("Deleting unused certificates")
     db.removeUnusedCerts()
     logger.info("Deleting domains which are not in the Bind configuration")
-    db.removeNotFoundDomains()
+    db.removeNotFoundDomains(domainParser.getDomains())
     logger.info('Clearing cache completed')
 
 

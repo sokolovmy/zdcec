@@ -25,12 +25,15 @@ CREATE TABLE IF NOT EXISTS hosts (
 CREATE TABLE IF NOT EXISTS domains (
     domain_name VARCHAR(255) UNIQUE,
     expire_date VARCHAR(30) NOT NULL,
-    last_update VARCHAR(30) NOT NULL
+    last_update VARCHAR(30) NOT NULL,
+    checked TINYINT NOT NULL DEFAULT 1
 )
 '''
 
+
 def fromDbDateTime(str):
     return datetime.strptime(str, config['dbDateTimeFormat']).replace(tzinfo=timezone.utc)
+
 
 class CacheDB:
     def __init__(self, dbFileName=config['dbFileName']):
@@ -39,13 +42,13 @@ class CacheDB:
 
     def __del__(self):
         self.con.close()
-    
+
     def _initDB(self):
         cur = self.con.cursor()
         cur.executescript(_create_certs_db_sql_)
         self.con.commit()
 
-    def _execSQL(self, SQL, params = None, commit=True, fetchResult=True):
+    def _execSQL(self, SQL, params=None, commit=True, fetchResult=True):
         cur = self.con.cursor()
         if params:
             cur.execute(SQL, params)
@@ -64,8 +67,13 @@ class CacheDB:
             fetchResult=False
         )
 
-    def removeNotFoundDomains(self):
-        pass
+    def removeNotFoundDomains(self, domains, commit=True):
+        self._execSQL("UPDATE domains SET checked = 0", fetchResult=False, commit=False)
+        for domain in domains:
+            self._execSQL("UPDATE domains SET checked = 1 WHERE domain_name = ?", (domain,),
+                          fetchResult=False, commit=False)
+        self._execSQL("DELETE FROM domains WHERE checked = 0", fetchResult=False, commit=False)
+        self.commit(commit=commit)
 
     def _getCurDateTime(self):
         curDate = datetime.now(tz=timezone.utc)
@@ -86,16 +94,16 @@ class CacheDB:
         )
         result = self._execSQL("SELECT id FROM certs WHERE CERT = ?", (certStr,), commit=commit)
         return result[0][0]
-    
+
     def addHost(self, cert_id, hostName, commit=True):
         curDate = self._getCurDateTime()
         self._execSQL(
-            "INSERT INTO hosts (hostname, cert_id, last_update) VALUES (?, ?, ?) ON CONFLICT (hostname) DO UPDATE SET cert_id = ?, last_update = ?",
+            "INSERT INTO hosts (hostname, cert_id, last_update) VALUES (?, ?, ?)"
+            " ON CONFLICT (hostname) DO UPDATE SET cert_id = ?, last_update = ?",
             (hostName, cert_id, curDate, cert_id, curDate,),
             commit=commit
         )
 
-    
     def addHostWithCert(self, hostName, certStr):
         cert_id = self.addCert(certStr, commit=False)
         self.addHost(cert_id, hostName, commit=False)
@@ -104,7 +112,7 @@ class CacheDB:
     def getCertById(self, id):
         res = self._execSQL("SELECT cert, last_update FROM certs WHERE id = ?", (id,))
         return res[0]
-    
+
     def getCerts(self):
         return self._execSQL("SELECT id, cert, last_update FROM certs")
 
@@ -117,11 +125,14 @@ class CacheDB:
             expireDate = expireDate.strftime(config['dbDateTimeFormat'])
             curDate = self._getCurDateTime()
             self._execSQL(
-                "INSERT INTO domains (domain_name, expire_date, last_update) VALUES (?, ?, ?) ON CONFLICT (domain_name) DO UPDATE SET expire_date = ?, last_update = ?",
+                "INSERT INTO domains (domain_name, expire_date, last_update, checked)"
+                " VALUES (?, ?, ?, 1) ON CONFLICT (domain_name)"
+                " DO UPDATE SET expire_date = ?, last_update = ?, checked = 1",
                 (domainName, expireDate, curDate, expireDate, curDate,),
-                fetchResult=False, 
+                fetchResult=False,
                 commit=commit
             )
+
     def getDomainData(self, domainName):
         return self._execSQL('SELECT expire_date, last_update FROM domains WHERE domain_name = ?', (domainName,))[0]
 
