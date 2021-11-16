@@ -4,7 +4,7 @@ import sys
 from logging.handlers import RotatingFileHandler
 
 from lib.config import config
-from
+
 
 
 def _setLogger_(console=False):
