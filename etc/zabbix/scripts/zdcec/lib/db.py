@@ -1,6 +1,6 @@
 '''
 TODO:
-    разработать процедуру удаления утстаревших данных
+    разработать процедуру удаления устаревших данных
 '''
 
 import sqlite3
@@ -9,6 +9,7 @@ import itertools
 from datetime import datetime, timezone
 
 from lib.config import config
+
 
 _create_certs_db_sql_ = '''
 CREATE TABLE IF NOT EXISTS certs (

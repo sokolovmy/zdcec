@@ -7,3 +7,5 @@ etc.named
 old
 *.tar
 *tmp*
+.idea
+.vscode
