@@ -1,10 +1,8 @@
-
-import sqlite3
 import itertools
+import sqlite3
 from datetime import datetime, timezone
 
 from .config import config
-
 
 _create_certs_db_sql_ = '''
 CREATE TABLE IF NOT EXISTS certs (
@@ -57,13 +55,19 @@ class CacheDB:
         self.commit(commit)
         return res
 
-    def removeUnusedCerts(self):
+    def getBaseCast(self):
+        domains = self._execSQL("SELECT domain_name, expire_date FROM domains", commit=False)
+        hosts = self._execSQL("SELECT hostname, cert_id FROM hosts", commit=False)
+        certs = self._execSQL("SELECT _id_, cert FROM certs")
+        return {'certs': certs, 'hosts': hosts, 'domains': domains}
+
+    def removeUnusedCerts(self, commit=False):
         self._execSQL(
             "DELETE FROM certs WHERE _id_ NOT IN (SELECT cert_id FROM hosts GROUP BY cert_id);",
-            fetchResult=False
+            fetchResult=False, commit=commit
         )
 
-    def removeNotFoundDomains(self, domains, commit=True):
+    def removeNotFoundDomains(self, domains, commit=False):
         self._execSQL("UPDATE domains SET checked = 0", fetchResult=False, commit=False)
         for domain in domains:
             self._execSQL("UPDATE domains SET checked = 1 WHERE domain_name = ?", (domain,),
@@ -81,7 +85,7 @@ class CacheDB:
         if commit:
             self.con.commit()
 
-    def addCert(self, certStr, commit=True):
+    def addCert(self, certStr, commit=False):
         cur_date = self._getCurDateTime()
         self._execSQL(
             "INSERT INTO certs (cert, last_update) VALUES (?, ?) ON CONFLICT (cert) DO UPDATE SET last_update = ?",
@@ -92,7 +96,10 @@ class CacheDB:
         result = self._execSQL("SELECT _id_ FROM certs WHERE CERT = ?", (certStr,), commit=commit)
         return result[0][0]
 
-    def addHost(self, cert_id, hostName, commit=True):
+    def flushHostsTable(self, commit=False):
+        self._execSQL("DELETE FROM hosts", commit=commit)
+
+    def addHost(self, cert_id, hostName, commit=False):
         cur_date = self._getCurDateTime()
         self._execSQL(
             "INSERT INTO hosts (hostname, cert_id, last_update) VALUES (?, ?, ?)"
@@ -101,10 +108,10 @@ class CacheDB:
             commit=commit
         )
 
-    def addHostWithCert(self, hostName, certStr):
+    def addHostWithCert(self, hostName, certStr, commit=False):
         cert_id = self.addCert(certStr, commit=False)
         self.addHost(cert_id, hostName, commit=False)
-        self.commit()
+        self.commit(commit)
 
     def getCertById(self, _id_):
         res = self._execSQL("SELECT cert, last_update FROM certs WHERE _id_ = ?", (_id_,))
@@ -117,7 +124,7 @@ class CacheDB:
         rows = self._execSQL("SELECT hostname FROM hosts WHERE cert_id = ? ORDER BY hostname ASC", (cert_id,))
         return tuple(itertools.chain.from_iterable(rows))
 
-    def addDomain(self, domain_name, expire_date: datetime, commit=True):
+    def addDomain(self, domain_name, expire_date: datetime, commit=False):
         if expire_date:
             expire_date = expire_date.strftime(config['dbDateTimeFormat'])
             cur_date = self._getCurDateTime()

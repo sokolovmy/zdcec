@@ -25,6 +25,8 @@ try:
     logger.debug(f'Information updated on {counter} domains')
     logger.info('Collecting information about hosts')
     hosts = domainParser.getHostsFromDomains()
+    logger.info('Deleting old hosts information from database')
+    db.flushHostsTable()
     sslCheck = lib.sslcheck.SSLCheck(timeout=1)
     counter = 0
     for host in hosts:
@@ -48,7 +50,8 @@ try:
     logger.info("Deleting domains which are not in the Bind configuration")
     db.removeNotFoundDomains(domainParser.getDomains())
     logger.info('Clearing cache completed')
-
+    db.commit()
+    logger.info('Updates committed to database')
 
 except BaseException as e:
     logger.error(e, exc_info=True)
