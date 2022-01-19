@@ -1,63 +1,62 @@
-
-
-from datetime import timezone, datetime
-import wizard_whois
-#pip install https://github.com/egberts/iscpy/archive/refs/heads/master.zip
-import iscpy
-
 import os
 import re
 import socket
+from datetime import timezone, datetime
 
+# pip install https://github.com/egberts/iscpy/archive/refs/heads/master.zip
+import iscpy
+import wizard_whois
 
-from lib.config import config
-
+from .config import config
 
 
 def getDomainExpDate(domainName):
     try:
-        wdomain = wizard_whois.get_whois(domainName)
-        expDate: datetime = min(wdomain['expiration_date'])
-        expDate = expDate.replace(tzinfo=timezone.utc)
-        return expDate, 0
+        w_domain = wizard_whois.get_whois(domainName)
+        exp_date: datetime = min(w_domain['expiration_date'])
+        exp_date = exp_date.replace(tzinfo=timezone.utc)
+        return exp_date, 0
     except socket.error:
-         return None, 1
+        return None, 1
     except KeyError:
-         return None, 2
+        return None, 2
+
 
 class DomainsParser:
-    '''
+    """
         Bind ISC Config file Parser
         Get from config forward domain zones
-        
+
         TODO: add parsing 'include' directive
-    '''
-    def __init__(self, namedConfFile = config['namedConfFile'], namedZonesDir = config['namedZonesDir']):
+    """
+
+    def __init__(self, namedConfFile=config['namedConfFile'], namedZonesDir=config.get('namedZonesDir')):
         self.namedConfFile = namedConfFile
         self.namedZonesDir = namedZonesDir
         self._domains = None
 
         self._hosts_ = []
-        self._resolvedCnames_ = []
+        self._resolvedCNAMEs_ = []
         self._A_ = None
         self._cname_ = None
-        
 
     def getDomains(self):
         if self._domains is None:
             self._domains = {}
             with open(self.namedConfFile) as file:
-                fileStr = file.read()
-            config = iscpy.dns.MakeNamedDict(fileStr)
-            
-            for dn in config['orphan_zones']:
+                file_str = file.read()
+            named_config = iscpy.dns.MakeNamedDict(file_str)
+
+            for dn in named_config['orphan_zones']:
                 if dn.find('.in-addr.arpa') >= 0:
                     continue
-                zoneFile = config['orphan_zones'][dn]['file']
-                if not os.path.isabs(zoneFile):
-                    relPath = self.namedZonesDir if self.namedZonesDir else os.path.dirname(self.namedConfFile)
-                    zoneFile = os.path.join(relPath, zoneFile)
-                self._domains[dn] = zoneFile
+                zone_file = named_config['orphan_zones'][dn]['file']
+                if self.namedZonesDir:
+                    zone_file = os.path.basename(zone_file)
+                    zone_file = os.path.join(self.namedZonesDir, zone_file)
+                elif not os.path.isabs(zone_file):
+                    zone_file = os.path.join(os.path.dirname(self.namedConfFile), zone_file)
+                self._domains[dn] = zone_file
 
         return self._domains
 
@@ -70,49 +69,47 @@ class DomainsParser:
                 bzp = BindZoneFileParser(self._domains[domainName], domainName)
                 self._A_.update(bzp.getA())
                 self._cname_.update(bzp.getCname())
-            
-            self._resolveCnames()
+
+            self._resolveCNAMEs()
             self._A_.update(self._cname_)
             self._cname_ = None
         return self._A_
 
-
-    def _resolveCnames(self):
-        fordel = []
+    def _resolveCNAMEs(self):
+        for_del = []
         for hostName in self._cname_:
-            res = self._resolveCname(hostName)
+            res = self._resolveCNAME(hostName)
             if res is None:
-                fordel.append(hostName)
-        for h in fordel:
+                for_del.append(hostName)
+        for h in for_del:
             self._cname_.pop(h)
-        self._resolvedCnames_ = []
+        self._resolvedCNAMEs_ = []
 
-    
-    def _resolveCname(self, rName):
-        if rName in self._resolvedCnames_:
+    def _resolveCNAME(self, rName):
+        if rName in self._resolvedCNAMEs_:
             return self._cname_[rName]
-        
+
         cn = self._cname_[rName]
         if cn in self._A_:
             self._cname_[rName] = self._A_[cn]
-            self._resolvedCnames_.append(rName)
+            self._resolvedCNAMEs_.append(rName)
             return self._A_[cn]
-        
+
         if cn in self._cname_:
-            cn = self._resolveCname(cn)
+            cn = self._resolveCNAME(cn)
             if cn:
                 self._cname_[rName] = cn
                 return cn
         return None
- 
 
 
 class BindZoneFileParser:
-    '''
+    """
         single Bind zone file parsing for A & CNAME rows
-        not all sintax support
+        not all syntax support
         skip * - hostnames
-    '''
+    """
+
     def __init__(self, zoneFileName, originDomain, skipLocalhost=True, skipNonLocalDomain=False):
         if originDomain[-1] != '.':
             originDomain += '.'
@@ -120,29 +117,31 @@ class BindZoneFileParser:
         self.origin = originDomain
         self.skipLocalhost = skipLocalhost
         self.skipNonLocalDomain = skipNonLocalDomain
-        self.prevHostname = originDomain #???
+        self.prevHostname = originDomain  # ???
         self.A = dict()
         self.Cname = dict()
-        #'(?P<hn>\S+)?\s+(?:IN)?\s+(?P<cmd>A|CNAME|SOA|NS|MX)s+(?P<arg>\S+).*'
-        self.reCommon = re.compile('(?P<hn>\S+)?\s+(?:\d+\s+)?(?:IN\s+)?(?P<cmd>A|CNAME|SOA|NS|MX|TXT|SRV)\s+(?P<arg>\S+).*' , flags=re.IGNORECASE)
+        # '(?P<hn>\S+)?\s+(?:IN)?\s+(?P<cmd>A|CNAME|SOA|NS|MX)s+(?P<arg>\S+).*'
+        self.reCommon = re.compile(
+            '(?P<hn>\S+)?\s+(?:\d+\s+)?(?:IN\s+)?(?P<cmd>A|CNAME|SOA|NS|MX|TXT|SRV)\s+(?P<arg>\S+).*',
+            flags=re.IGNORECASE)
         self.reOrigin = re.compile('\s*\$ORIGIN\s+(\S+).*', flags=re.IGNORECASE)
         self.reIPv4 = re.compile('(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')
 
         with open(zoneFileName) as zoneFile:
-            zoneStr = zoneFile.read()
-            zoneStr = self.__removeComments(zoneStr)
-            zoneStrs = zoneStr.split('\n')            
-            self.__parseFile(zoneStrs)
+            zone_str = zoneFile.read()
+            zone_str = self.__removeComments(zone_str)
+            zone_strs = zone_str.split('\n')
+            self.__parseFile(zone_strs)
 
     def getA(self):
         return self.A
 
     def getCname(self):
         return self.Cname
-    
-    def __parseFile(self, zoneStrs):
-        for line in zoneStrs:
-            if (len(line) == 0):
+
+    def __parseFile(self, zone_strs):
+        for line in zone_strs:
+            if len(line) == 0:
                 continue
             else:
                 self.__parseLine(line)
@@ -154,60 +153,57 @@ class BindZoneFileParser:
         else:
             res = self.reCommon.match(line)
             if res:
-                hostName = res.group('hn')
-                if ((not hostName is None) and ('*' in hostName)):
+                host_name = res.group('hn')
+                if (host_name is not None) and ('*' in host_name):
                     return
-                hostName = self.__processHostName(hostName)
+                host_name = self.__processHostName(host_name)
                 cmd = res.group('cmd').upper()
-                if (cmd == 'A'):
-                    self.__processA(hostName, res.group('arg'))
-                elif (cmd == 'CNAME'):
-                    self.__processCname(hostName, res.group('arg'))
- 
-    def __removeComments(self, str):
-        #remove all multiline comments
-        str = re.sub('/\*[^\*]*\*/', '', str, flags=re.MULTILINE)
-        #remove all single line comments
-        str = re.sub('^#.*$', '', str, flags=re.MULTILINE)
-        #str = re.sub('//.*$', '', str, flags=re.MULTILINE)
-        str = re.sub(';.*$', '', str, flags=re.MULTILINE)
-        return str
-    
-    def __processHostName(self, hostName, setPrevHostName=True):
-        if (hostName is None or hostName == ''):
-            hostName = self.prevHostname
-        elif (hostName == '@'):
-            hostName = self.origin
-            if setPrevHostName:
-                self.prevHostname = hostName
-        elif (hostName[-1] != '.'):
-            if (self.origin[0] != '.'):
-                hostName += '.'
-            hostName += self.origin
-            if setPrevHostName:
-                self.prevHostname = hostName
-        
-        return hostName
+                if cmd == 'A':
+                    self.__processA(host_name, res.group('arg'))
+                elif cmd == 'CNAME':
+                    self.__processCname(host_name, res.group('arg'))
 
-    def __processA(self, hostName, str):
-        res = self.reIPv4.match(str)
+    @staticmethod
+    def __removeComments(s):
+        # remove all multiline comments
+        s = re.sub(r'/\*[^*]*\*/', '', s, flags=re.MULTILINE)
+        # remove all single line comments
+        s = re.sub('^#.*$', '', s, flags=re.MULTILINE)
+        # s = re.sub('//.*$', '', s, flags=re.MULTILINE)
+        s = re.sub(';.*$', '', s, flags=re.MULTILINE)
+        return s
+
+    def __processHostName(self, host_name, setPrevHostName=True):
+        if host_name is None or host_name == '':
+            host_name = self.prevHostname
+        elif host_name == '@':
+            host_name = self.origin
+            if setPrevHostName:
+                self.prevHostname = host_name
+        elif host_name[-1] != '.':
+            if self.origin[0] != '.':
+                host_name += '.'
+            host_name += self.origin
+            if setPrevHostName:
+                self.prevHostname = host_name
+
+        return host_name
+
+    def __processA(self, hostName, s):
+        res = self.reIPv4.match(s)
         if res:
             ip = res.group(1)
-            if (self.skipLocalhost and ip == '127.0.0.1'):
+            if self.skipLocalhost and ip == '127.0.0.1':
                 return
-            if (hostName in self.A):
+            if hostName in self.A:
                 self.A[hostName] += ';' + ip
             else:
-                self.A[hostName] = ip 
-    
-    def __processCname(self, hostName, str):
-        if ('*' in str):
+                self.A[hostName] = ip
+
+    def __processCname(self, hostName, s):
+        if '*' in s:
             return
-        cnameHost = self.__processHostName(str, False)
-        if (self.skipNonLocalDomain and cnameHost == str):
+        cname_host = self.__processHostName(s, False)
+        if self.skipNonLocalDomain and cname_host == s:
             return
-        self.Cname[hostName] = cnameHost
-
-
-
-
+        self.Cname[hostName] = cname_host

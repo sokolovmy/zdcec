@@ -1,20 +1,18 @@
-
 import logging
 
+from . import __version__
 
 config = {
-    'dbFileName': '/var/lib/zabbix/zdcec_cache.db',
-    'namedConfFile': '/var/lib/zabbix/copy_from_ns0/named/chroot/var/named/zones/forward.zones',
-    'namedZonesDir': '/var/lib/zabbix/copy_from_ns0/named/chroot/var/named',
-    'logFileName': '/var/log/zabbix/zdcec.log',
+    'dbFileName': 'c:/Github/zdcec/tmp/zdcec_cache.db',
+    'namedConfFile': 'c:/Github/zdcec/tmp/ns2/named.zones.conf',
+    'namedZonesDir': 'c:/Github/zdcec/tmp/ns2/zones/',  # mandatory
+    'logFileName': 'c:/Github/zdcec/tmp/zdcec.log',
     'loggingLevel': logging.DEBUG,
-    'loggingToConsole': False,
+    'loggingToConsole': True,
     'dateTimeFormat': '%Y-%m-%d %H:%M:%S %Z',
     'dbDateTimeFormat': '%Y%m%dT%H%M%SZ',
     'logMaxFiles': 7,
-    'logFileSize': 1024*1024
+    'logFileSize': 1024 * 1024
 }
 
-version = '0.12'
-
-
+version = __version__

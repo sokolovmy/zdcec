@@ -1,16 +1,15 @@
 #!/usr/bin/python3
 
+import json
+import sys
 from datetime import datetime, timezone
-from lib.config import config
-from lib.config import version
-from lib.log import logger
 
 import lib.db
-from lib.db import fromDbDateTime
 import lib.sslcheck
+from lib.config import version
+from lib.db import fromDbDateTime
 from lib.sslcheck import UCert, getDateTimeStr
-import sys
-import json
+
 
 def usage():
     print(f'''
@@ -23,8 +22,10 @@ Usage: {sys.argv[0]} command [ argument ]
     listdomains - list cached domains
     domain <name of domain> - show more info about domain
     listcerts - list cached certs
-    cert <id of cert> - show more info aboud cert
+    cert <_id_ of cert> - show more info about cert
     ''')
+
+
 def opts():
     if len(sys.argv) <= 1:
         usage()
@@ -43,92 +44,95 @@ def opts():
         usage()
 
 
-
 def listDomains():
-    dl = [] 
-    curDate = datetime.now(tz=timezone.utc)   
-    #domain_name, expire_date, last_update
-    for domain in db.getDomainsData():
-        expDate = lib.db.fromDbDateTime(domain[1])
-        dObj = {}
-        dObj['{#DOMAIN}'] = domain[0]
-        dObj['{#EXPDATE}'] = getDateTimeStr(expDate)
-        dObj['{#CACHEDATE}'] = getDateTimeStr(fromDbDateTime(domain[2]))
-        delta =  expDate - curDate
-        dObj['{#EXPDAYS}'] = delta.days
-        dl.append(dObj)
+    dl = []
+    cur_date = datetime.now(tz=timezone.utc)
+    # domain_name, expire_date, last_update
+    for domain_data in db.getDomainsData():
+        exp_date = lib.db.fromDbDateTime(domain_data[1])
+        d_obj = {
+            '{#DOMAIN}': domain_data[0],
+            '{#EXPDATE}': getDateTimeStr(exp_date),
+            '{#CACHEDATE}': getDateTimeStr(fromDbDateTime(domain_data[2]))}
+        delta = exp_date - cur_date
+        d_obj['{#EXPDAYS}'] = delta.days
+        dl.append(d_obj)
     print(json.dumps(dl, indent=2))
+
 
 def domain(domainName):
     try:
         dd = db.getDomainData(domainName)
-        expDate = lib.db.fromDbDateTime(dd[0])
-        curDate = datetime.now(tz=timezone.utc)
-        #expire_date, last_update
-        dObj = {
-            'ExpDate': getDateTimeStr(expDate),
-            'ExpDays': (expDate - curDate).days,
+        exp_date = lib.db.fromDbDateTime(dd[0])
+        cur_date = datetime.now(tz=timezone.utc)
+        # expire_date, last_update
+        d_obj = {
+            'ExpDate': getDateTimeStr(exp_date),
+            'ExpDays': (exp_date - cur_date).days,
             'CacheDate': getDateTimeStr(lib.db.fromDbDateTime(dd[1]))
         }
     except:
-        dObj = {
+        d_obj = {
             'ExpDate': '',
-            'ExpDays': 2**31,
+            'ExpDays': 2 ** 31,
             'CacheDate': ''
         }
-    print(json.dumps(dObj, indent=2))
+    print(json.dumps(d_obj, indent=2))
 
 
 def listCerts():
     cl = []
-    curDate = datetime.now(tz=timezone.utc)
-    # id, cert, last_update
+    cur_date = datetime.now(tz=timezone.utc)
+    # _id_, cert, last_update
     for certRow in db.getCerts():
-        ucert = UCert(certPEM=certRow[1])
-        cObj = {}
-        cObj['{#ID}'] = certRow[0]
-        cObj['{#CACHEDATE}'] = getDateTimeStr(fromDbDateTime(certRow[2]))
-        expDate = ucert.getEndDate()
-        cObj['{#EXPDATE}'] = getDateTimeStr(expDate)
-        delta = expDate - curDate
-        cObj['{#EXPDAYS}'] = delta.days
-        cObj['{#COMNAME}'] = ucert.getSubjectCommonName()
-        cObj['{#SUBJECT}'] = ucert.getSubjectStr() 
-        cObj['{#ISSUER}'] = ucert.getIssuerStr()
-        cObj['{#SERIAL}'] = str(ucert.getSerial())
-        cObj['{#VERSION}'] = ucert.getVersion()
-        cObj['{#SUBJECTALTNAME}'] = ucert.getSubjectAltNameStr()
-        cObj['{#HOSTS}'] = ', '.join(db.getHostsByCertId(certRow[0]))
-        cl.append(cObj)
+        u_cert = UCert(certPEM=certRow[1])
+        c_obj = {
+            '{#ID}': certRow[0],
+            '{#CACHEDATE}': getDateTimeStr(fromDbDateTime(certRow[2]))
+        }
+        exp_date = u_cert.getEndDate()
+        c_obj['{#EXPDATE}'] = getDateTimeStr(exp_date)
+        delta = exp_date - cur_date
+        c_obj['{#EXPDAYS}'] = delta.days
+        c_obj['{#COMNAME}'] = u_cert.getSubjectCommonName()
+        c_obj['{#SUBJECT}'] = u_cert.getSubjectStr()
+        c_obj['{#ISSUER}'] = u_cert.getIssuerStr()
+        c_obj['{#SERIAL}'] = str(u_cert.getSerial())
+        c_obj['{#VERSION}'] = u_cert.getVersion()
+        c_obj['{#SUBJECTALTNAME}'] = u_cert.getSubjectAltNameStr()
+        c_obj['{#HOSTS}'] = ', '.join(db.getHostsByCertId(certRow[0]))
+        cl.append(c_obj)
     print(json.dumps(cl, indent=2))
+
 
 def cert(certId):
     try:
         cd = db.getCertById(certId)
-        #cert, last_update
-        ucert = UCert(certPEM=cd[0])
-        expDate = ucert.getEndDate()
-        curDate = datetime.now(tz=timezone.utc)
-        cObj = {
+        # cert, last_update
+        u_cert = UCert(certPEM=cd[0])
+        exp_date = u_cert.getEndDate()
+        cur_date = datetime.now(tz=timezone.utc)
+        c_obj = {
             'CacheDate': getDateTimeStr(lib.db.fromDbDateTime(cd[1])),
-            'ExpDate': getDateTimeStr(expDate),
-            'ExpDays': (expDate - curDate).days,
+            'ExpDate': getDateTimeStr(exp_date),
+            'ExpDays': (exp_date - cur_date).days,
             'Hosts': ', '.join(db.getHostsByCertId(certId)),
-            'ComName': ucert.getSubjectCommonName(),
-            "Subject": ucert.getSubjectStr(),
-            'Issuer': ucert.getIssuerStr(),
-            'Serial': str(ucert.getSerial()),
-            'Version': ucert.getVersion(),
-            'SubjectAllName': ucert.getSubjectAltNameStr()
+            'ComName': u_cert.getSubjectCommonName(),
+            "Subject": u_cert.getSubjectStr(),
+            'Issuer': u_cert.getIssuerStr(),
+            'Serial': str(u_cert.getSerial()),
+            'Version': u_cert.getVersion(),
+            'SubjectAllName': u_cert.getSubjectAltNameStr()
         }
     except:
         v = ['CacheDate', 'ExpDate', 'Hosts', 'ComName', 'Subject', 'Issuer', 'Serial', 'Version', 'SubjectAllName']
-        cObj = {}
+        c_obj = {}
         for i in v:
-            cObj[i] = ''
-        cObj['ExpDays'] = 2**31
+            c_obj[i] = ''
+        c_obj['ExpDays'] = 2 ** 31
 
-    print(json.dumps(cObj, indent=2))
+    print(json.dumps(c_obj, indent=2))
+
 
 if __name__ == '__main__':
     try:

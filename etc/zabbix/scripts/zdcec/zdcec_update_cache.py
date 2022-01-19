@@ -1,12 +1,10 @@
 #!/usr/bin/python3
 
-from lib.config import config
-from lib.log import logger
-
 import lib.db
 import lib.domcheck
 import lib.sslcheck
-
+from lib.config import config
+from lib.log import logger
 
 logger.info("Cache update starts.")
 try:
@@ -20,9 +18,9 @@ try:
             db.addDomain(domainName, expDate)
             logger.debug(f"Domain '{domainName}' expired at {expDate.strftime(config['dateTimeFormat'])}")
             counter += 1
-        if error == 1: # Connection Error
+        if error == 1:  # Connection Error
             logger.error(f"Cannot connect to whois server to check domain info about '{domainName}'")
-        elif error == 2: # Registration error maybe.
+        elif error == 2:  # Registration error maybe.
             logger.warning(f"Cannot get information about the domain '{domainName}'. Is it not registered, may be?")
     logger.debug(f'Information updated on {counter} domains')
     logger.info('Collecting information about hosts')

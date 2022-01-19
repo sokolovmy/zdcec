@@ -1,30 +1,27 @@
-
-#pip install pyasn1
-#pip install pyasn1_modules
+# pip install pyasn1
+# pip install pyasn1_modules
 # Import pyasn and the proper decode function
-import pyasn1
-from pyasn1.codec.der.decoder import decode as asn1_decoder
-# Import SubjectAltName from rfc2459 module
-from pyasn1_modules.rfc2459 import SubjectAltName
-# Import native Python type encoder
-from pyasn1.codec.native.encoder import encode as nat_encoder
-
-
-#pip install pyopenssl
-from OpenSSL.SSL import Connection, Context, SSLv3_METHOD, TLSv1_2_METHOD
-import OpenSSL
-import OpenSSL.crypto
-from OpenSSL.crypto import FILETYPE_PEM, X509
-from datetime import datetime, timezone, timedelta, tzinfo
-
 import socket
 import string
+from datetime import datetime, timezone
 
-from lib.config import config
+import OpenSSL
+import OpenSSL.crypto
+# pip install pyopenssl
+from OpenSSL.SSL import Connection, Context, SSLv3_METHOD, TLSv1_2_METHOD
+from OpenSSL.crypto import FILETYPE_PEM, X509
+from pyasn1.codec.der.decoder import decode as asn1_decoder
+# Import native Python type encoder
+from pyasn1.codec.native.encoder import encode as nat_encoder
+# Import SubjectAltName from rfc2459 module
+from pyasn1_modules.rfc2459 import SubjectAltName
+
+from .config import config
 
 
 def getDateTimeStr(dt: datetime):
     return dt.strftime(config['dateTimeFormat'])
+
 
 class UCert:
     def __init__(self, X509Cert: X509 = None, certPEM: string = None):
@@ -38,7 +35,7 @@ class UCert:
         self.subject = None
         self.issuer = None
         self.extList = None
-    
+
     def toPEM(self):
         return OpenSSL.crypto.dump_certificate(FILETYPE_PEM, self.X509Cert)
 
@@ -47,7 +44,7 @@ class UCert:
             str(self.X509Cert.get_notAfter().decode('utf-8')),
             "%Y%m%d%H%M%SZ"
         ).replace(tzinfo=timezone.utc)
-    
+
     def getStartDate(self):
         return datetime.strptime(
             str(self.X509Cert.get_notBefore().decode('utf-8')),
@@ -56,7 +53,7 @@ class UCert:
 
     def isExpired(self):
         return self.X509Cert.has_expired()
-    
+
     def getVersion(self):
         return self.X509Cert.get_version()
 
@@ -65,10 +62,10 @@ class UCert:
 
     def getIssuer(self):
         if self.issuer is None:
-            isld = {}
+            is_ld = {}
             for item in self.X509Cert.get_issuer().get_components():
-                isld[item[0].decode('utf-8').upper()] = item[1].decode('utf-8')
-            self.issuer = isld
+                is_ld[item[0].decode('utf-8').upper()] = item[1].decode('utf-8')
+            self.issuer = is_ld
         return self.issuer
 
     def getIssuerStr(self):
@@ -81,6 +78,7 @@ class UCert:
                 sld[item[0].decode('utf-8').upper()] = item[1].decode('utf-8')
             self.subject = sld
         return self.subject
+
     def getSubjectCommonName(self):
         return self.getSubject().get('CN')
 
@@ -92,18 +90,19 @@ class UCert:
             el = {}
             for i in range(0, self.X509Cert.get_extension_count() - 1):
                 ext = self.X509Cert.get_extension(i)
-                #decoded_alt_names, _ = asn1_decoder(ext.get_data(), asn1Spec=SubjectAltName())
+                # decoded_alt_names, _ = asn1_decoder(ext.get_data(), asn1Spec=SubjectAltName())
                 el[ext.get_short_name().decode('utf-8')] = ext.get_data()
-                
+
             self.extList = el
 
         return self.extList
+
     def getSubjectAltName(self):
         san = self.getExtList().get('subjectAltName')
         if san:
             san, _ = asn1_decoder(san, asn1Spec=SubjectAltName())
-            san = nat_encoder(san)           
-            return [ x['dNSName'].decode('utf-8') for x in san]
+            san = nat_encoder(san)
+            return [x['dNSName'].decode('utf-8') for x in san]
         return None
 
     def getSubjectAltNameStr(self):
@@ -120,9 +119,10 @@ class UCert:
             if cn not in nl:
                 nl.append(cn)
         return nl
-    
+
     def getAllNamesStr(self):
         return ', '.join(self.getAllNames())
+
 
 class SSLCheck:
     def __init__(self, timeout=3, socketTimeout=None):
@@ -149,4 +149,3 @@ class SSLCheck:
                 return UCert(cert), None
         except Exception as e:
             return None, e
-    

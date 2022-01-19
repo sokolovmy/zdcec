@@ -1,19 +1,14 @@
-'''
-TODO:
-    разработать процедуру удаления устаревших данных
-'''
 
 import sqlite3
-from sqlite3.dbapi2 import Cursor, connect
 import itertools
 from datetime import datetime, timezone
 
-from lib.config import config
+from .config import config
 
 
 _create_certs_db_sql_ = '''
 CREATE TABLE IF NOT EXISTS certs (
-    id INTEGER PRIMARY KEY,
+    _id_ INTEGER PRIMARY KEY,
     cert text UNIQUE,
     last_update VARCHAR(30) NOT NULL
 );
@@ -21,7 +16,7 @@ CREATE TABLE IF NOT EXISTS hosts (
     hostname varchar(255) UNIQUE,
     cert_id INTEGER NOT NULL,
     last_update VARCHAR(30) NOT NULL,
-    FOREIGN KEY(cert_id) REFERENCES certs(id)
+    FOREIGN KEY(cert_id) REFERENCES certs(_id_)
 );
 CREATE TABLE IF NOT EXISTS domains (
     domain_name VARCHAR(255) UNIQUE,
@@ -32,8 +27,8 @@ CREATE TABLE IF NOT EXISTS domains (
 '''
 
 
-def fromDbDateTime(str):
-    return datetime.strptime(str, config['dbDateTimeFormat']).replace(tzinfo=timezone.utc)
+def fromDbDateTime(s):
+    return datetime.strptime(s, config['dbDateTimeFormat']).replace(tzinfo=timezone.utc)
 
 
 class CacheDB:
@@ -59,12 +54,12 @@ class CacheDB:
         if fetchResult:
             res = cur.fetchall()
         cur.close()
-        self.commit()
+        self.commit(commit)
         return res
 
     def removeUnusedCerts(self):
         self._execSQL(
-            "DELETE FROM certs WHERE id NOT IN (SELECT cert_id FROM hosts GROUP BY cert_id);",
+            "DELETE FROM certs WHERE _id_ NOT IN (SELECT cert_id FROM hosts GROUP BY cert_id);",
             fetchResult=False
         )
 
@@ -76,32 +71,33 @@ class CacheDB:
         self._execSQL("DELETE FROM domains WHERE checked = 0", fetchResult=False, commit=False)
         self.commit(commit=commit)
 
-    def _getCurDateTime(self):
-        curDate = datetime.now(tz=timezone.utc)
-        curDate = curDate.strftime(config['dbDateTimeFormat'])
-        return curDate
+    @staticmethod
+    def _getCurDateTime():
+        cur_date = datetime.now(tz=timezone.utc)
+        cur_date = cur_date.strftime(config['dbDateTimeFormat'])
+        return cur_date
 
     def commit(self, commit=True):
         if commit:
             self.con.commit()
 
     def addCert(self, certStr, commit=True):
-        curDate = self._getCurDateTime()
+        cur_date = self._getCurDateTime()
         self._execSQL(
             "INSERT INTO certs (cert, last_update) VALUES (?, ?) ON CONFLICT (cert) DO UPDATE SET last_update = ?",
-            (certStr, curDate, curDate,),
+            (certStr, cur_date, cur_date,),
             fetchResult=False,
             commit=commit
         )
-        result = self._execSQL("SELECT id FROM certs WHERE CERT = ?", (certStr,), commit=commit)
+        result = self._execSQL("SELECT _id_ FROM certs WHERE CERT = ?", (certStr,), commit=commit)
         return result[0][0]
 
     def addHost(self, cert_id, hostName, commit=True):
-        curDate = self._getCurDateTime()
+        cur_date = self._getCurDateTime()
         self._execSQL(
             "INSERT INTO hosts (hostname, cert_id, last_update) VALUES (?, ?, ?)"
             " ON CONFLICT (hostname) DO UPDATE SET cert_id = ?, last_update = ?",
-            (hostName, cert_id, curDate, cert_id, curDate,),
+            (hostName, cert_id, cur_date, cert_id, cur_date,),
             commit=commit
         )
 
@@ -110,26 +106,26 @@ class CacheDB:
         self.addHost(cert_id, hostName, commit=False)
         self.commit()
 
-    def getCertById(self, id):
-        res = self._execSQL("SELECT cert, last_update FROM certs WHERE id = ?", (id,))
+    def getCertById(self, _id_):
+        res = self._execSQL("SELECT cert, last_update FROM certs WHERE _id_ = ?", (_id_,))
         return res[0]
 
     def getCerts(self):
-        return self._execSQL("SELECT id, cert, last_update FROM certs")
+        return self._execSQL("SELECT _id_, cert, last_update FROM certs")
 
     def getHostsByCertId(self, cert_id):
         rows = self._execSQL("SELECT hostname FROM hosts WHERE cert_id = ? ORDER BY hostname ASC", (cert_id,))
         return tuple(itertools.chain.from_iterable(rows))
 
-    def addDomain(self, domainName, expireDate: datetime, commit=True):
-        if expireDate:
-            expireDate = expireDate.strftime(config['dbDateTimeFormat'])
-            curDate = self._getCurDateTime()
+    def addDomain(self, domain_name, expire_date: datetime, commit=True):
+        if expire_date:
+            expire_date = expire_date.strftime(config['dbDateTimeFormat'])
+            cur_date = self._getCurDateTime()
             self._execSQL(
                 "INSERT INTO domains (domain_name, expire_date, last_update, checked)"
                 " VALUES (?, ?, ?, 1) ON CONFLICT (domain_name)"
                 " DO UPDATE SET expire_date = ?, last_update = ?, checked = 1",
-                (domainName, expireDate, curDate, expireDate, curDate,),
+                (domain_name, expire_date, cur_date, expire_date, cur_date,),
                 fetchResult=False,
                 commit=commit
             )
