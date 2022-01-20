@@ -66,9 +66,10 @@ class DomainsParser:
             self._cname_ = {}
             self.getDomains()
             for domainName in self._domains:
-                bzp = BindZoneFileParser(self._domains[domainName], domainName)
-                self._A_.update(bzp.getA())
-                self._cname_.update(bzp.getCname())
+                if self._domains[domainName]:
+                    bzp = BindZoneFileParser(self._domains[domainName], domainName)
+                    self._A_.update(bzp.getA())
+                    self._cname_.update(bzp.getCname())
 
             self._resolveCNAMEs()
             self._A_.update(self._cname_)

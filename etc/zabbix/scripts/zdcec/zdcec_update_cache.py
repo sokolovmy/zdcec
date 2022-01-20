@@ -10,9 +10,13 @@ logger.info("Cache update starts.")
 try:
     db = lib.db.CacheDB(config['dbFileName'])
     logger.info("Collecting information about domains.")
+    start_base_cast = db.getBaseCast()  # for logging changes
     counter = 0
     domainParser = lib.domcheck.DomainsParser()
-    for domainName in domainParser.getDomains():
+    domains = domainParser.getDomains()
+    if config.get('manual_domains'):
+        domains.update(config['manual_domains'])
+    for domainName in domains:
         expDate, error = lib.domcheck.getDomainExpDate(domainName)
         if expDate:
             db.addDomain(domainName, expDate)
@@ -25,9 +29,12 @@ try:
     logger.debug(f'Information updated on {counter} domains')
     logger.info('Collecting information about hosts')
     hosts = domainParser.getHostsFromDomains()
+    if config.get('manual_hosts'):
+        hosts.update(config['manual_hosts'])
+
     logger.info('Deleting old hosts information from database')
     db.flushHostsTable()
-    sslCheck = lib.sslcheck.SSLCheck(timeout=1)
+    sslCheck = lib.sslcheck.SSLCheck(timeout=3)
     counter = 0
     for host in hosts:
         logger.info(f"Trying to get a cert for '{host}'.")
@@ -53,6 +60,9 @@ try:
     db.commit()
     logger.info('Updates committed to database')
 
+    # Logging changes in database (hosts, domains, certs) to the database table logs
+    db.saveCastDiffToLog(start_base_cast)
+    print('test')
 except BaseException as e:
     logger.error(e, exc_info=True)
 
