@@ -34,7 +34,7 @@ try:
 
     logger.info('Deleting old hosts information from database')
     db.flushHostsTable()
-    sslCheck = lib.sslcheck.SSLCheck(timeout=3)
+    sslCheck = lib.sslcheck.SSLCheck(timeout=5)
     counter = 0
     for host in hosts:
         logger.info(f"Trying to get a cert for '{host}'.")

@@ -23,6 +23,7 @@ Usage: {sys.argv[0]} command [ argument ]
     domain <name of domain> - show more info about domain
     listcerts - list cached certs
     cert <_id_ of cert> - show more info about cert
+    log - return last log row from log
     ''')
 
 
@@ -33,6 +34,8 @@ def opts():
         listDomains()
     elif sys.argv[1] == 'listcerts':
         listCerts()
+    elif sys.argv[1] == 'log':
+        log()
     elif len(sys.argv) == 3:
         if sys.argv[1] == 'domain':
             domain(sys.argv[2])
@@ -42,6 +45,11 @@ def opts():
             usage()
     else:
         usage()
+
+
+def log():
+    res = db.getLastLogRow()
+    print(json.dumps(res))
 
 
 def listDomains():
@@ -138,6 +146,6 @@ if __name__ == '__main__':
     try:
         db = lib.db.CacheDB()
         opts()
-    except:
+    except BaseException as e:
         print("ZBX_NOTSUPPORTED: Unsupported item key.")
         sys.exit(-1)

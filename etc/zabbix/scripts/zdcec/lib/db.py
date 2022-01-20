@@ -62,6 +62,16 @@ class CacheDB:
         self.commit(commit)
         return res
 
+    def getLastLogRow(self):
+        res = self._execSQL('SELECT * FROM logs ORDER BY ROWID DESC LIMIT 1')
+        res = res[0]
+        return {
+            'date_time': fromDbDateTime(res[0]).strftime(config['dateTimeFormat']),
+            'log': res[1],
+            'hosts_hash': res[2],
+            'domains_hash':res[3]
+        }
+
     def getBaseCast(self):
         domains = set()
         for row in self._execSQL("SELECT domain_name FROM domains", commit=False):
