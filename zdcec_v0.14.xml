@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <zabbix_export>
     <version>5.0</version>
-    <date>2021-09-29T17:36:05Z</date>
+    <date>2022-01-27T10:07:00Z</date>
     <groups>
         <group>
             <name>Templates</name>
@@ -9,11 +9,13 @@
     </groups>
     <templates>
         <template>
-            <template>Template domains and host certs expire check</template>
-            <name>Template domains and host certs expire check</name>
+            <template>Template domains and host certs expire check. Working Time. v0.14</template>
+            <name>Template domains and host certs expire check. Working Time. v0.14</name>
             <description>Search and add domains and host certificates to Zabbix using the local database of the Bind server&#13;
 &#13;
-v0.12</description>
+Working Time&#13;
+&#13;
+v0.14</description>
             <groups>
                 <group>
                     <name>Templates</name>
@@ -24,9 +26,151 @@ v0.12</description>
                     <name>Domains</name>
                 </application>
                 <application>
+                    <name>Domains logs</name>
+                </application>
+                <application>
                     <name>Host certificates</name>
                 </application>
             </applications>
+            <items>
+                <item>
+                    <name>Last Log date</name>
+                    <type>DEPENDENT</type>
+                    <key>zdcec[log,date_time]</key>
+                    <delay>0</delay>
+                    <history>7d</history>
+                    <trends>0</trends>
+                    <value_type>CHAR</value_type>
+                    <applications>
+                        <application>
+                            <name>Domains logs</name>
+                        </application>
+                    </applications>
+                    <preprocessing>
+                        <step>
+                            <type>JSONPATH</type>
+                            <params>$.date_time</params>
+                        </step>
+                        <step>
+                            <type>DISCARD_UNCHANGED_HEARTBEAT</type>
+                            <params>1d</params>
+                        </step>
+                    </preprocessing>
+                    <master_item>
+                        <key>zdcec[log]</key>
+                    </master_item>
+                </item>
+                <item>
+                    <name>Domains Hash</name>
+                    <type>DEPENDENT</type>
+                    <key>zdcec[log,domains_hash]</key>
+                    <delay>0</delay>
+                    <history>7d</history>
+                    <trends>0</trends>
+                    <value_type>CHAR</value_type>
+                    <applications>
+                        <application>
+                            <name>Domains logs</name>
+                        </application>
+                    </applications>
+                    <preprocessing>
+                        <step>
+                            <type>JSONPATH</type>
+                            <params>$.domains_hash</params>
+                        </step>
+                    </preprocessing>
+                    <master_item>
+                        <key>zdcec[log]</key>
+                    </master_item>
+                    <triggers>
+                        <trigger>
+                            <expression>{diff()}=1</expression>
+                            <recovery_mode>NONE</recovery_mode>
+                            <name>The number/composition of tracked domains has changed</name>
+                            <url>{$ZABBIX.URL}/zabbix.php?action=latest.view&amp;filter_application=Domains+logs&amp;filter_select=Log_Value&amp;filter_set=1</url>
+                            <priority>WARNING</priority>
+                            <description>For more information see last value of Log_Value</description>
+                            <type>MULTIPLE</type>
+                            <manual_close>YES</manual_close>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <name>Hosts Hash</name>
+                    <type>DEPENDENT</type>
+                    <key>zdcec[log,hosts_hash]</key>
+                    <delay>0</delay>
+                    <history>7d</history>
+                    <trends>0</trends>
+                    <value_type>CHAR</value_type>
+                    <applications>
+                        <application>
+                            <name>Domains logs</name>
+                        </application>
+                    </applications>
+                    <preprocessing>
+                        <step>
+                            <type>JSONPATH</type>
+                            <params>$.hosts_hash</params>
+                        </step>
+                    </preprocessing>
+                    <master_item>
+                        <key>zdcec[log]</key>
+                    </master_item>
+                    <triggers>
+                        <trigger>
+                            <expression>{diff()}=1</expression>
+                            <recovery_mode>NONE</recovery_mode>
+                            <name>The number/composition of tracked SSL hosts has changed</name>
+                            <url>{$ZABBIX.URL}/zabbix.php?action=latest.view&amp;filter_application=Domains+logs&amp;filter_select=Log_Value&amp;filter_set=1</url>
+                            <priority>WARNING</priority>
+                            <description>For more information see last value of Log_Value</description>
+                            <type>MULTIPLE</type>
+                            <manual_close>YES</manual_close>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <name>Log_Value</name>
+                    <type>DEPENDENT</type>
+                    <key>zdcec[log,log]</key>
+                    <delay>0</delay>
+                    <history>7d</history>
+                    <trends>0</trends>
+                    <value_type>TEXT</value_type>
+                    <applications>
+                        <application>
+                            <name>Domains logs</name>
+                        </application>
+                    </applications>
+                    <preprocessing>
+                        <step>
+                            <type>JSONPATH</type>
+                            <params>$.log</params>
+                        </step>
+                        <step>
+                            <type>DISCARD_UNCHANGED_HEARTBEAT</type>
+                            <params>1d</params>
+                        </step>
+                    </preprocessing>
+                    <master_item>
+                        <key>zdcec[log]</key>
+                    </master_item>
+                </item>
+                <item>
+                    <name>Log_item</name>
+                    <key>zdcec[log]</key>
+                    <delay>0;{$UPDATE_INTERVAL}/{$WORKING_TIME}</delay>
+                    <history>1d</history>
+                    <trends>0</trends>
+                    <value_type>TEXT</value_type>
+                    <applications>
+                        <application>
+                            <name>Domains logs</name>
+                        </application>
+                    </applications>
+                </item>
+            </items>
             <discovery_rules>
                 <discovery_rule>
                     <name>SSL host certs discovery</name>
@@ -54,7 +198,6 @@ v0.12</description>
                             <type>DEPENDENT</type>
                             <key>zdcec[cert,{#ID},CacheDate]</key>
                             <delay>0</delay>
-                            <history>1d</history>
                             <trends>0</trends>
                             <value_type>CHAR</value_type>
                             <description>When the certificate information was updated</description>
@@ -73,6 +216,10 @@ v0.12</description>
                                     <type>JSONPATH</type>
                                     <params>$.CacheDate</params>
                                 </step>
+                                <step>
+                                    <type>DISCARD_UNCHANGED_HEARTBEAT</type>
+                                    <params>1d</params>
+                                </step>
                             </preprocessing>
                             <master_item>
                                 <key>zdcec[cert,{#ID}]</key>
@@ -83,7 +230,6 @@ v0.12</description>
                             <type>DEPENDENT</type>
                             <key>zdcec[cert,{#ID},ExpDate]</key>
                             <delay>0</delay>
-                            <history>1d</history>
                             <trends>0</trends>
                             <value_type>CHAR</value_type>
                             <description>When the certificate information was updated</description>
@@ -102,6 +248,10 @@ v0.12</description>
                                     <type>JSONPATH</type>
                                     <params>$.ExpDate</params>
                                 </step>
+                                <step>
+                                    <type>DISCARD_UNCHANGED_HEARTBEAT</type>
+                                    <params>1d</params>
+                                </step>
                             </preprocessing>
                             <master_item>
                                 <key>zdcec[cert,{#ID}]</key>
@@ -112,8 +262,6 @@ v0.12</description>
                             <type>DEPENDENT</type>
                             <key>zdcec[cert,{#ID},ExpDays]</key>
                             <delay>0</delay>
-                            <history>1d</history>
-                            <trends>0</trends>
                             <applications>
                                 <application>
                                     <name>Host certificates</name>
@@ -128,6 +276,10 @@ v0.12</description>
                                 <step>
                                     <type>JSONPATH</type>
                                     <params>$.ExpDays</params>
+                                </step>
+                                <step>
+                                    <type>DISCARD_UNCHANGED_HEARTBEAT</type>
+                                    <params>1d</params>
                                 </step>
                             </preprocessing>
                             <master_item>
@@ -174,11 +326,10 @@ Issuer: {#ISSUER}, Serial: {#SERIAL}&#13;
 Used on Hosts: {#HOSTS}&#13;
 &#13;
 Last update: {#CACHEDATE}</description>
-                                    <manual_close>YES</manual_close>
                                     <dependencies>
                                         <dependency>
                                             <name>SSL host certificate &quot;{#COMNAME}&quot; expires on {#EXPDATE}.</name>
-                                            <expression>{Template domains and host certs expire check:zdcec[cert,{#ID},ExpDays].last()}&lt;={$CERT.EXPIRE.ALERT:&quot;{#ISSUER}&quot;}</expression>
+                                            <expression>{Template domains and host certs expire check. Working Time. v0.14:zdcec[cert,{#ID},ExpDays].last()}&lt;={$CERT.EXPIRE.ALERT:&quot;{#ISSUER}&quot;}</expression>
                                         </dependency>
                                     </dependencies>
                                     <tags>
@@ -200,7 +351,6 @@ Last update: {#CACHEDATE}</description>
                             <type>DEPENDENT</type>
                             <key>zdcec[cert,{#ID},Hosts]</key>
                             <delay>0</delay>
-                            <history>1d</history>
                             <trends>0</trends>
                             <value_type>TEXT</value_type>
                             <applications>
@@ -218,6 +368,10 @@ Last update: {#CACHEDATE}</description>
                                     <type>JSONPATH</type>
                                     <params>$.Hosts</params>
                                 </step>
+                                <step>
+                                    <type>DISCARD_UNCHANGED_HEARTBEAT</type>
+                                    <params>1d</params>
+                                </step>
                             </preprocessing>
                             <master_item>
                                 <key>zdcec[cert,{#ID}]</key>
@@ -228,7 +382,6 @@ Last update: {#CACHEDATE}</description>
                             <type>DEPENDENT</type>
                             <key>zdcec[cert,{#ID},Issuer]</key>
                             <delay>0</delay>
-                            <history>1d</history>
                             <trends>0</trends>
                             <value_type>CHAR</value_type>
                             <applications>
@@ -246,6 +399,10 @@ Last update: {#CACHEDATE}</description>
                                     <type>JSONPATH</type>
                                     <params>$.Issuer</params>
                                 </step>
+                                <step>
+                                    <type>DISCARD_UNCHANGED_HEARTBEAT</type>
+                                    <params>1d</params>
+                                </step>
                             </preprocessing>
                             <master_item>
                                 <key>zdcec[cert,{#ID}]</key>
@@ -256,7 +413,6 @@ Last update: {#CACHEDATE}</description>
                             <type>DEPENDENT</type>
                             <key>zdcec[cert,{#ID},Serial]</key>
                             <delay>0</delay>
-                            <history>1d</history>
                             <trends>0</trends>
                             <value_type>CHAR</value_type>
                             <applications>
@@ -274,6 +430,41 @@ Last update: {#CACHEDATE}</description>
                                     <type>JSONPATH</type>
                                     <params>$.Serial</params>
                                 </step>
+                                <step>
+                                    <type>DISCARD_UNCHANGED_HEARTBEAT</type>
+                                    <params>1d</params>
+                                </step>
+                            </preprocessing>
+                            <master_item>
+                                <key>zdcec[cert,{#ID}]</key>
+                            </master_item>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>SSL host cert {#COMNAME}. SubjectAllName</name>
+                            <type>DEPENDENT</type>
+                            <key>zdcec[cert,{#ID},SubjectAllName]</key>
+                            <delay>0</delay>
+                            <trends>0</trends>
+                            <value_type>CHAR</value_type>
+                            <applications>
+                                <application>
+                                    <name>Host certificates</name>
+                                </application>
+                            </applications>
+                            <application_prototypes>
+                                <application_prototype>
+                                    <name>ssl host cert {#COMNAME}</name>
+                                </application_prototype>
+                            </application_prototypes>
+                            <preprocessing>
+                                <step>
+                                    <type>JSONPATH</type>
+                                    <params>$.SubjectAllName</params>
+                                </step>
+                                <step>
+                                    <type>DISCARD_UNCHANGED_HEARTBEAT</type>
+                                    <params>1d</params>
+                                </step>
                             </preprocessing>
                             <master_item>
                                 <key>zdcec[cert,{#ID}]</key>
@@ -284,7 +475,6 @@ Last update: {#CACHEDATE}</description>
                             <type>DEPENDENT</type>
                             <key>zdcec[cert,{#ID},Subject]</key>
                             <delay>0</delay>
-                            <history>1d</history>
                             <trends>0</trends>
                             <value_type>CHAR</value_type>
                             <applications>
@@ -302,6 +492,10 @@ Last update: {#CACHEDATE}</description>
                                     <type>JSONPATH</type>
                                     <params>$.Subject</params>
                                 </step>
+                                <step>
+                                    <type>DISCARD_UNCHANGED_HEARTBEAT</type>
+                                    <params>1d</params>
+                                </step>
                             </preprocessing>
                             <master_item>
                                 <key>zdcec[cert,{#ID}]</key>
@@ -312,7 +506,6 @@ Last update: {#CACHEDATE}</description>
                             <type>DEPENDENT</type>
                             <key>zdcec[cert,{#ID},Version]</key>
                             <delay>0</delay>
-                            <history>1d</history>
                             <trends>0</trends>
                             <value_type>CHAR</value_type>
                             <applications>
@@ -330,6 +523,10 @@ Last update: {#CACHEDATE}</description>
                                     <type>JSONPATH</type>
                                     <params>$.Version</params>
                                 </step>
+                                <step>
+                                    <type>DISCARD_UNCHANGED_HEARTBEAT</type>
+                                    <params>1d</params>
+                                </step>
                             </preprocessing>
                             <master_item>
                                 <key>zdcec[cert,{#ID}]</key>
@@ -338,8 +535,8 @@ Last update: {#CACHEDATE}</description>
                         <item_prototype>
                             <name>SSL host cert {#COMNAME}</name>
                             <key>zdcec[cert,{#ID}]</key>
-                            <delay>3h</delay>
-                            <history>0</history>
+                            <delay>0;{$UPDATE_INTERVAL}/{$WORKING_TIME}</delay>
+                            <history>1d</history>
                             <trends>0</trends>
                             <value_type>TEXT</value_type>
                             <applications>
@@ -352,6 +549,12 @@ Last update: {#CACHEDATE}</description>
                                     <name>ssl host cert {#COMNAME}</name>
                                 </application_prototype>
                             </application_prototypes>
+                            <preprocessing>
+                                <step>
+                                    <type>DISCARD_UNCHANGED</type>
+                                    <params/>
+                                </step>
+                            </preprocessing>
                         </item_prototype>
                     </item_prototypes>
                 </discovery_rule>
@@ -381,7 +584,6 @@ Last update: {#CACHEDATE}</description>
                             <type>DEPENDENT</type>
                             <key>zdcec[domain,{#DOMAIN},CacheDate]</key>
                             <delay>0</delay>
-                            <history>1d</history>
                             <trends>0</trends>
                             <value_type>CHAR</value_type>
                             <applications>
@@ -399,6 +601,10 @@ Last update: {#CACHEDATE}</description>
                                     <type>JSONPATH</type>
                                     <params>$.CacheDate</params>
                                 </step>
+                                <step>
+                                    <type>DISCARD_UNCHANGED_HEARTBEAT</type>
+                                    <params>1d</params>
+                                </step>
                             </preprocessing>
                             <master_item>
                                 <key>zdcec[domain,{#DOMAIN}]</key>
@@ -409,7 +615,6 @@ Last update: {#CACHEDATE}</description>
                             <type>DEPENDENT</type>
                             <key>zdcec[domain,{#DOMAIN},ExpDate]</key>
                             <delay>0</delay>
-                            <history>1d</history>
                             <trends>0</trends>
                             <value_type>CHAR</value_type>
                             <applications>
@@ -427,6 +632,10 @@ Last update: {#CACHEDATE}</description>
                                     <type>JSONPATH</type>
                                     <params>$.ExpDate</params>
                                 </step>
+                                <step>
+                                    <type>DISCARD_UNCHANGED_HEARTBEAT</type>
+                                    <params>1d</params>
+                                </step>
                             </preprocessing>
                             <master_item>
                                 <key>zdcec[domain,{#DOMAIN}]</key>
@@ -437,8 +646,6 @@ Last update: {#CACHEDATE}</description>
                             <type>DEPENDENT</type>
                             <key>zdcec[domain,{#DOMAIN},ExpDays]</key>
                             <delay>0</delay>
-                            <history>1d</history>
-                            <trends>0</trends>
                             <units>days</units>
                             <applications>
                                 <application>
@@ -454,6 +661,10 @@ Last update: {#CACHEDATE}</description>
                                 <step>
                                     <type>JSONPATH</type>
                                     <params>$.ExpDays</params>
+                                </step>
+                                <step>
+                                    <type>DISCARD_UNCHANGED_HEARTBEAT</type>
+                                    <params>1d</params>
                                 </step>
                             </preprocessing>
                             <master_item>
@@ -494,11 +705,10 @@ Expire date: {#EXPDATE}&#13;
 Days to expire: {#EXPDAYS}&#13;
 &#13;
 Last update: {#CACHEDATE}</description>
-                                    <manual_close>YES</manual_close>
                                     <dependencies>
                                         <dependency>
                                             <name>Domain &quot;{#DOMAIN}&quot; expires on {#EXPDATE}.</name>
-                                            <expression>{Template domains and host certs expire check:zdcec[domain,{#DOMAIN},ExpDays].last()}&lt;={$DOMAIN.EXPIRE.ALERT}</expression>
+                                            <expression>{Template domains and host certs expire check. Working Time. v0.14:zdcec[domain,{#DOMAIN},ExpDays].last()}&lt;={$DOMAIN.EXPIRE.ALERT}</expression>
                                         </dependency>
                                     </dependencies>
                                     <tags>
@@ -518,8 +728,8 @@ Last update: {#CACHEDATE}</description>
                         <item_prototype>
                             <name>Domain {#DOMAIN}</name>
                             <key>zdcec[domain,{#DOMAIN}]</key>
-                            <delay>3h</delay>
-                            <history>0</history>
+                            <delay>0;{$UPDATE_INTERVAL}/{$WORKING_TIME}</delay>
+                            <history>1d</history>
                             <trends>0</trends>
                             <value_type>TEXT</value_type>
                             <description>Description of domain {#DOMAIN}&#13;
@@ -538,6 +748,12 @@ last update: {#CACHEDATE}</description>
                                     <name>Domain {#DOMAIN}</name>
                                 </application_prototype>
                             </application_prototypes>
+                            <preprocessing>
+                                <step>
+                                    <type>DISCARD_UNCHANGED_HEARTBEAT</type>
+                                    <params>1d</params>
+                                </step>
+                            </preprocessing>
                         </item_prototype>
                     </item_prototypes>
                 </discovery_rule>
@@ -585,6 +801,14 @@ last update: {#CACHEDATE}</description>
                     <macro>{$DOMAIN.NOT_MATCHES}</macro>
                     <value>^$</value>
                     <description>This macro is used to filter a domain by name</description>
+                </macro>
+                <macro>
+                    <macro>{$UPDATE_INTERVAL}</macro>
+                    <value>1h</value>
+                </macro>
+                <macro>
+                    <macro>{$WORKING_TIME}</macro>
+                    <value>1-7,00:8-19:00</value>
                 </macro>
             </macros>
         </template>
