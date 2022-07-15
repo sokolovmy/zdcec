@@ -3,10 +3,10 @@ import logging
 from . import __version__
 
 config = {
-    'dbFileName': '/tmp/zdcec_cache.db',
-    'namedConfFile': '/tmp/ns2/named.zones.conf',
-    'namedZonesDir': '/tmp/ns2/zones/',  # mandatory
-    'logFileName': '/tmp/zdcec.log',
+    'dbFileName': '/home/smy/prj/test_ssl/tmp/zdcec_cache.db',
+    'namedConfFile': '/home/smy/prj/test_ssl/tmp/ns2/named.zones.conf',
+    'namedZonesDir': '/home/smy/prj/test_ssl/tmp/ns2/zones/',  # mandatory
+    'logFileName': '/home/smy/prj/test_ssl/tmp/zdcec.log',
     'loggingLevel': logging.DEBUG,
     'loggingToConsole': True,
     'dateTimeFormat': '%Y-%m-%d %H:%M:%S %Z',
