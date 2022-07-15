@@ -43,7 +43,7 @@ try:
             host = host[:-1]
         # cert, exception = sslCheck.getCert(host)        
         try:
-            certPEM = get_server_certificate((host, 443), timeout=5)
+            certPEM = get_server_certificate((host, 443))#, timeout=5) # timeout from 3.10 python
             db.addHostWithCert(host, certPEM)
             logger.debug(f"The certificate for the host '{host}' is saved in the cache.")
             counter += 1
