@@ -2,10 +2,9 @@
 
 import lib.db
 import lib.domcheck
-# import lib.sslcheck
+import lib.sslcheck
 from lib.config import config
 from lib.log import logger
-from ssl import get_server_certificate
 
 logger.info("Cache update starts.")
 try:
@@ -35,22 +34,21 @@ try:
 
     logger.info('Deleting old hosts information from database')
     db.flushHostsTable()
-    # sslCheck = lib.sslcheck.SSLCheck(timeout=5)
+    sslCheck = lib.sslcheck.SSLCheck(timeout=5)
     counter = 0
     for host in hosts:
         logger.info(f"Trying to get a cert for '{host}'.")
         if host[-1] == '.':
             host = host[:-1]
-        # cert, exception = sslCheck.getCert(host)        
-        try:
-            certPEM = get_server_certificate((host, 443))#, timeout=5) # timeout from 3.10 python
-            db.addHostWithCert(host, certPEM)
+        cert, exception = sslCheck.getCert(host)
+        if cert:
+            db.addHostWithCert(host, cert.toPEM())
             logger.debug(f"The certificate for the host '{host}' is saved in the cache.")
             counter += 1
-        except Exception as e:
+        else:
             logger.warning(f"Cannot save the certificate for the host '{host}'. Host or web service is down?")
-            logger.error(e)
-
+            if exception:
+                logger.error(exception)
     logger.debug(f'Information updated on {counter} hosts')
 
     logger.info("Removing outdated information from cache")
